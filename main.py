@@ -19,9 +19,12 @@ from rag_system import RAGSystem
 from inscription_agent import InscriptionAgent
 from document_validator import DocumentValidator
 from form_progress import FormProgressManager
-from student_profile import ProfileManager, StudentProfile
+from student_profile import StudentProfile
 from export_utils import format_documents_for_csv, format_documents_for_email
-from user_account import AccountManager
+
+# Utiliser la base de données au lieu des fichiers JSON
+from db_student_profile import DBProfileManager
+from db_user_account import DBAccountManager
 
 # Charger les variables d'environnement
 load_dotenv()
@@ -44,13 +47,15 @@ rag_system = None
 agent = None
 extractor = None
 progress_manager = FormProgressManager()
-profile_manager = ProfileManager()
-account_manager = AccountManager()
+# Utiliser la base de données pour les profils et comptes
+profile_manager = DBProfileManager()
+account_manager = DBAccountManager()
 
 
 class ChatMessage(BaseModel):
     message: str
     session_id: Optional[str] = None
+    account_email: Optional[str] = None  # Email du compte connecté
 
 
 class ChatResponse(BaseModel):
@@ -138,10 +143,18 @@ async def chat_endpoint(chat_message: ChatMessage):
     if not agent:
         raise HTTPException(status_code=503, detail="Le système n'est pas encore initialisé")
     
-    # Ajouter le session_id au message pour que l'agent puisse consulter le profil
+    # Ajouter le session_id et l'email du compte au message pour que l'agent puisse les utiliser
     message_with_context = chat_message.message
+    context_parts = []
+    
     if chat_message.session_id:
-        message_with_context = f"[SESSION_ID: {chat_message.session_id}] {chat_message.message}"
+        context_parts.append(f"[SESSION_ID: {chat_message.session_id}]")
+    
+    if chat_message.account_email:
+        context_parts.append(f"[ACCOUNT_EMAIL: {chat_message.account_email}]")
+    
+    if context_parts:
+        message_with_context = f"{' '.join(context_parts)} {chat_message.message}"
     
     return StreamingResponse(
         generate_stream(agent, message_with_context),
@@ -304,6 +317,10 @@ async def start_phase2(session_id: str):
     if not profile.is_phase1_complete():
         raise HTTPException(status_code=400, detail="La phase 1 n'est pas complète")
     
+    # Recalculer les documents AVANT de passer à la phase 2
+    # pour s'assurer que tous les documents conditionnels sont inclus
+    profile.calculate_required_documents()
+    
     profile.move_to_phase2()
     profile_manager.save_profile(profile)
     
@@ -363,7 +380,12 @@ async def login(request: Request):
     if not email:
         raise HTTPException(status_code=400, detail="Email requis")
     
-    account = account_manager.authenticate(email, password) if password else account_manager.get_account(email)
+    # Utiliser login() pour DBAccountManager (qui vérifie le mot de passe et met à jour last_login)
+    # ou get_account() si pas de mot de passe (pour compatibilité)
+    if password:
+        account = account_manager.login(email, password)
+    else:
+        account = account_manager.get_account(email)
     
     if not account:
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
@@ -378,15 +400,30 @@ async def save_profile_to_account(email: str, request: Request):
     session_id = data.get("session_id")
     profile_data = data.get("profile_data")
     
-    if not session_id or not profile_data:
-        raise HTTPException(status_code=400, detail="session_id et profile_data requis")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id requis")
     
-    account = account_manager.get_account(email)
-    if not account:
-        raise HTTPException(status_code=404, detail="Compte non trouvé")
+    # Charger le profil depuis le session_id
+    profile = profile_manager.load_profile(session_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profil non trouvé")
     
-    account.save_profile(session_id, profile_data)
-    account_manager.save_account(account)
+    # Si profile_data est fourni, mettre à jour le profil
+    if profile_data:
+        # Mettre à jour les champs du profil avec profile_data
+        if isinstance(profile_data, dict):
+            profile.form_data.update(profile_data.get("form_data", {}))
+            if "phase" in profile_data:
+                profile.phase = profile_data["phase"]
+            if "current_step" in profile_data:
+                profile.current_step = profile_data["current_step"]
+            # Sauvegarder les modifications
+            profile_manager.save_profile(profile)
+    
+    # Sauvegarder le profil dans le compte
+    success = account_manager.save_profile_to_account(email, profile)
+    if not success:
+        raise HTTPException(status_code=500, detail="Erreur lors de la sauvegarde du profil")
     
     return {"message": "Profil sauvegardé", "session_id": session_id}
 

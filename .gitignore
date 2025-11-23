@@ -22,5 +22,9 @@ user_accounts/
 form_progress/
 *.json
 !requirements.txt
+*.db
+*.db-journal
+spaix.db
+spaix.db-journal
 !.gitignore
 

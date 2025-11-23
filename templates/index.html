@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent d'inscription Sciences Po Aix</title>
+    <link rel="icon" type="image/svg+xml" href="https://www.sciencespo-aix.fr/wp-content/uploads/2022/10/SciencesPoAix_Logotype-Complet_Couleur-1.svg">
     <style>
         * {
             margin: 0;
@@ -13,7 +14,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #0056a7 0%, #1863DC 50%, #EE2737 100%);
+            background: #9ca3af;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -35,11 +36,11 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #0056a7 0%, #1863DC 50%, #EE2737 100%);
+            background: #9ca3af;
             color: white;
             padding: 28px 25px;
             text-align: center;
-            box-shadow: 0 4px 20px rgba(0, 86, 167, 0.3);
+            box-shadow: 0 4px 20px rgba(156, 163, 175, 0.3);
             position: relative;
         }
         
@@ -79,7 +80,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 24px 20px;
-            background: linear-gradient(to bottom, #f5f7fa 0%, #ffffff 100%);
+            background: #ffffff;
         }
 
         .chat-container::-webkit-scrollbar {
@@ -91,12 +92,12 @@
         }
 
         .chat-container::-webkit-scrollbar-thumb {
-            background: #cbd5e0;
+            background: #EE2737;
             border-radius: 3px;
         }
 
         .chat-container::-webkit-scrollbar-thumb:hover {
-            background: #a0aec0;
+            background: #d91e2e;
         }
 
         .message {
@@ -135,7 +136,7 @@
         }
 
         .message.user .message-bubble {
-            background: linear-gradient(135deg, #0056a7 0%, #1863DC 50%, #EE2737 100%);
+            background: #9ca3af;
             color: white;
             border-bottom-right-radius: 6px;
             box-shadow: 0 4px 12px rgba(238, 39, 55, 0.3);
@@ -187,7 +188,7 @@
 
         .input-container button {
             padding: 16px 32px;
-            background: linear-gradient(135deg, #0056a7 0%, #1863DC 50%, #EE2737 100%);
+            background: #EE2737;
             color: white;
             border: none;
             border-radius: 16px;
@@ -215,7 +216,7 @@
 
         .quick-actions {
             padding: 16px 20px;
-            background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+            background: #ffffff;
             border-top: 1px solid rgba(0, 0, 0, 0.05);
             display: flex;
             gap: 8px;
@@ -237,7 +238,7 @@
         }
 
         .quick-action-btn:hover {
-            background: linear-gradient(135deg, #0056a7 0%, #1863DC 50%, #EE2737 100%);
+            background: #EE2737;
             color: white;
             border-color: transparent;
             transform: translateY(-1px);
@@ -281,7 +282,7 @@
         }
 
         .message-bubble.error {
-            background: linear-gradient(135deg, #fee 0%, #fff5f5 100%);
+            background: #fff5f5;
             border: 1px solid #feb2b2;
             color: #c53030;
         }
@@ -343,7 +344,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #0056a7 0%, #1863DC 50%, #EE2737 100%);
+            background: #9ca3af;
             color: white;
         }
 
@@ -392,7 +393,7 @@
 
         .phase-indicator {
             padding: 14px 20px;
-            background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
+            background: #ffffff;
             border-bottom: 2px solid rgba(238, 39, 55, 0.1);
             display: flex;
             justify-content: space-between;
@@ -410,17 +411,17 @@
         }
 
         .phase-badge.phase1 {
-            background: linear-gradient(135deg, #0056a7 0%, #1863DC 50%, #EE2737 100%);
+            background: #9ca3af;
             color: white;
         }
 
         .phase-badge.phase2 {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            background: #2ecc71;
             color: white;
         }
 
         .documents-list {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            background: #f8f9fa;
             padding: 24px;
             border-radius: 16px;
             margin: 16px 0;
@@ -473,7 +474,7 @@
         }
 
         .export-btn:hover {
-            background: linear-gradient(135deg, #0056a7 0%, #1863DC 50%, #EE2737 100%);
+            background: #9ca3af;
             color: white;
             border-color: transparent;
             transform: translateY(-1px);
@@ -529,7 +530,7 @@
 
         .quick-reply-btn {
             padding: 10px 20px;
-            background: linear-gradient(135deg, #0056a7 0%, #1863DC 50%, #EE2737 100%);
+            background: #EE2737;
             color: white;
             border: none;
             border-radius: 12px;
@@ -550,7 +551,80 @@
         }
 
         .quick-reply-btn.secondary {
-            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+            background: #7f8c8d;
+        }
+
+        /* Styles pour les choix multiples (radio buttons) */
+        .choice-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .choice-option {
+            display: flex;
+            align-items: center;
+            padding: 14px 18px;
+            background: white;
+            border: 2px solid #e8eaf0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .choice-option:hover {
+            border-color: #EE2737;
+            background: #fff5f5;
+            transform: translateX(4px);
+        }
+
+        .choice-option input[type="radio"] {
+            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #EE2737;
+        }
+
+        .choice-option.selected {
+            border-color: #EE2737;
+            background: #fff5f5;
+            box-shadow: 0 2px 8px rgba(238, 39, 55, 0.2);
+        }
+
+        .choice-option label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 15px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .choice-submit-btn {
+            margin-top: 16px;
+            padding: 12px 24px;
+            background: #EE2737;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(238, 39, 55, 0.3);
+        }
+
+        .choice-submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(238, 39, 55, 0.4);
+        }
+
+        .choice-submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .account-form-container {
@@ -605,12 +679,12 @@
                     👋 Bonjour ! Je suis votre assistant pour l'inscription à Sciences Po Aix.
                     <p style="margin-top: 15px; font-weight: 600;">Que souhaitez-vous faire aujourd'hui ?</p>
                     <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
-                        <button onclick="startDocumentCheck()" style="padding: 18px 20px; background: linear-gradient(135deg, #0056a7 0%, #1863DC 50%, #EE2737 100%); color: white; border: none; border-radius: 14px; cursor: pointer; font-size: 15px; text-align: left; box-shadow: 0 4px 12px rgba(238, 39, 55, 0.3); transition: all 0.2s; font-weight: 500;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(238, 39, 55, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(238, 39, 55, 0.3)'">
+                        <button onclick="startDocumentCheck()" style="padding: 18px 20px; background: #EE2737; color: white; border: none; border-radius: 14px; cursor: pointer; font-size: 15px; text-align: left; box-shadow: 0 4px 12px rgba(238, 39, 55, 0.3); transition: all 0.2s; font-weight: 500;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(238, 39, 55, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(238, 39, 55, 0.3)'">
                             <div style="font-size: 20px; margin-bottom: 6px;">📋</div>
                             <div style="font-weight: 600; margin-bottom: 4px;">Découvrir quels documents je dois fournir</div>
                             <div style="font-size: 13px; opacity: 0.95; font-weight: 400;">Je vais vous poser quelques questions pour déterminer exactement les pièces nécessaires</div>
                         </button>
-                        <button onclick="startForm()" style="padding: 18px 20px; background: linear-gradient(135deg, #0056a7 0%, #1863DC 50%, #EE2737 100%); color: white; border: none; border-radius: 14px; cursor: pointer; font-size: 15px; text-align: left; box-shadow: 0 4px 12px rgba(238, 39, 55, 0.3); transition: all 0.2s; font-weight: 500;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(238, 39, 55, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(238, 39, 55, 0.3)'">
+                        <button onclick="startForm()" style="padding: 18px 20px; background: #EE2737; color: white; border: none; border-radius: 14px; cursor: pointer; font-size: 15px; text-align: left; box-shadow: 0 4px 12px rgba(238, 39, 55, 0.3); transition: all 0.2s; font-weight: 500;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(238, 39, 55, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(238, 39, 55, 0.3)'">
                             <div style="font-size: 20px; margin-bottom: 6px;">📝</div>
                             <div style="font-weight: 600; margin-bottom: 4px;">Commencer mon inscription complète</div>
                             <div style="font-size: 13px; opacity: 0.95; font-weight: 400;">Processus guidé en 2 phases : détermination des documents puis remplissage du formulaire</div>
@@ -775,7 +849,7 @@
             // Détection pour créer un compte depuis Phase 2
             if ((lowerMessage.includes('créer un compte') || 
                  lowerMessage.includes('creer un compte') || 
-                 (lowerMessage === 'oui' && lastQuestionAsked === 'phase2_no_account' && lowerMessage.includes('compte')))) {
+                 (lowerMessage === 'oui' && (lastQuestionAsked === 'phase2_no_account' || lastQuestionAsked === 'phase2_account_creation')))) {
                 showAccountCreationForm();
                 sendButton.disabled = false;
                 sendButton.textContent = 'Envoyer';
@@ -783,11 +857,81 @@
                 return;
             }
             
+            // Détection pour "Non, continuer sans compte" depuis Phase 2
+            if ((lowerMessage.includes('non') || lowerMessage.includes('continuer sans compte')) && 
+                lastQuestionAsked === 'phase2_account_creation') {
+                // L'utilisateur ne veut pas créer de compte : continuer directement avec Phase 2
+                addMessage('D\'accord, vous continuerez sans compte. Votre progression sera sauvegardée localement.', false);
+                // Continuer avec la Phase 2
+                setTimeout(async () => {
+                    try {
+                        const response = await fetch(`/api/profile/${currentSessionId}/phase2`, {
+                            method: 'POST'
+                        });
+                        const data = await response.json();
+                        
+                        currentPhase = 'remplissage_formulaire';
+                        updatePhaseIndicator(currentPhase, currentSessionId);
+                        
+                        addMessage('📋 Parfait ! Passons à la Phase 2 : le remplissage du formulaire d\'inscription.', false);
+                        addMessage('Je vais vous poser des questions pour remplir chaque champ du formulaire.', false);
+                        addMessage('', false);
+                        addMessage('Commençons par vos informations personnelles. Quel est votre nom de famille ?', false);
+                    } catch (error) {
+                        showStatus('Erreur lors du démarrage de la Phase 2', 'error');
+                    }
+                }, 500);
+                sendButton.disabled = false;
+                sendButton.textContent = 'Envoyer';
+                userInput.focus();
+                return;
+            }
+            
+            // Détection pour "Oui, j'ai un compte" ou "Non, je n'ai pas de compte"
+            if (lastQuestionAsked === 'has_account_check') {
+                if (lowerMessage.includes('oui') || lowerMessage.includes('j\'ai un compte') || lowerMessage.includes('jai un compte')) {
+                    // L'utilisateur a un compte : demander de se connecter
+                    addMessage('🔐 Parfait ! Veuillez vous connecter pour récupérer votre progression.', false);
+                    showLoginForm();
+                    sendButton.disabled = false;
+                    sendButton.textContent = 'Envoyer';
+                    userInput.focus();
+                    return;
+                } else if (lowerMessage.includes('non') || lowerMessage.includes('pas de compte') || lowerMessage.includes('n\'ai pas')) {
+                    // L'utilisateur n'a pas de compte : commencer par la Phase 1
+                    clearSession();
+                    currentSessionId = null;
+                    currentPhase = 'collecte_info';
+                    addMessage('📋 Parfait ! Nous allons commencer par la Phase 1 : déterminer quels documents vous devez fournir.', false);
+                    addMessage('', false);
+                    await startDocumentCheck(true);
+                    sendButton.disabled = false;
+                    sendButton.textContent = 'Envoyer';
+                    userInput.focus();
+                    return;
+                }
+            }
+            
             // Détection pour se connecter depuis Phase 2
             if ((lowerMessage.includes('se connecter') || 
                  lowerMessage.includes('connecter') || 
                  (lowerMessage === 'oui' && lastQuestionAsked === 'phase2_need_login'))) {
                 showLoginForm();
+                sendButton.disabled = false;
+                sendButton.textContent = 'Envoyer';
+                userInput.focus();
+                return;
+            }
+            
+            // Détection pour "Commencer par la Phase 1" après demande de connexion
+            if (lastQuestionAsked === 'phase2_need_login' && 
+                (lowerMessage.includes('commencer') || lowerMessage.includes('phase 1') || lowerMessage.includes('phase1'))) {
+                clearSession();
+                currentSessionId = null;
+                currentPhase = 'collecte_info';
+                addMessage('📋 Parfait ! Nous allons commencer par la Phase 1 : déterminer quels documents vous devez fournir.', false);
+                addMessage('', false);
+                await startDocumentCheck(true);
                 sendButton.disabled = false;
                 sendButton.textContent = 'Envoyer';
                 userInput.focus();
@@ -831,8 +975,11 @@
             }
             
             // S'assurer qu'un profil existe avant d'utiliser l'agent
+            // Ne pas restaurer automatiquement si l'utilisateur n'a pas de compte
             if (!currentSessionId) {
-                await initializeProfile();
+                const savedEmail = localStorage.getItem('spaix_account_email');
+                // Si pas de compte, ne pas restaurer la session automatiquement
+                await initializeProfile(false, !savedEmail);
             }
             
             // En Phase 2 (remplissage_formulaire), on utilise l'agent pour remplir le formulaire
@@ -865,6 +1012,9 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
             try {
+                // Récupérer l'email du compte connecté si disponible
+                const accountEmail = localStorage.getItem('spaix_account_email');
+                
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
@@ -872,7 +1022,8 @@
                     },
                     body: JSON.stringify({ 
                         message: message,
-                        session_id: currentSessionId || undefined
+                        session_id: currentSessionId || undefined,
+                        account_email: accountEmail && accountEmail.trim() !== '' && accountEmail !== 'null' && accountEmail !== 'undefined' ? accountEmail : undefined
                     })
                 });
 
@@ -1184,6 +1335,80 @@
             const text = bubble.textContent || bubble.innerText || '';
             const lowerText = text.toLowerCase();
             
+            // Détecter les questions avec choix multiples (format: "(1 - ..., 2 - ..., 3 - ..., 4 - ...)")
+            const choicePattern = /\((\d+)\s*-\s*[^,)]+,\s*(\d+)\s*-\s*[^,)]+,\s*(\d+)\s*-\s*[^,)]+,\s*(\d+)\s*-\s*[^)]+\)/i;
+            const choiceMatch = text.match(choicePattern);
+            
+            if (choiceMatch && !bubble.querySelector('.choice-options')) {
+                // Extraire les options
+                const options = [];
+                const fullMatch = choiceMatch[0];
+                const optionPattern = /(\d+)\s*-\s*([^,)]+)/g;
+                let match;
+                while ((match = optionPattern.exec(fullMatch)) !== null) {
+                    options.push({
+                        value: match[1],
+                        label: match[2].trim()
+                    });
+                }
+                
+                if (options.length > 0) {
+                    const choiceContainer = document.createElement('div');
+                    choiceContainer.className = 'choice-options';
+                    
+                    const radioGroupName = 'choice_' + Date.now();
+                    let submitBtn;
+                    
+                    options.forEach((option, index) => {
+                        const optionDiv = document.createElement('div');
+                        optionDiv.className = 'choice-option';
+                        
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = radioGroupName;
+                        radio.id = radioGroupName + '_' + index;
+                        radio.value = option.value;
+                        
+                        const label = document.createElement('label');
+                        label.htmlFor = radioGroupName + '_' + index;
+                        label.textContent = `${option.value} - ${option.label}`;
+                        
+                        // Gérer la sélection visuelle
+                        radio.addEventListener('change', () => {
+                            document.querySelectorAll(`input[name="${radioGroupName}"]`).forEach(r => {
+                                r.closest('.choice-option').classList.remove('selected');
+                            });
+                            radio.closest('.choice-option').classList.add('selected');
+                            if (submitBtn) submitBtn.disabled = false;
+                        });
+                        
+                        optionDiv.appendChild(radio);
+                        optionDiv.appendChild(label);
+                        choiceContainer.appendChild(optionDiv);
+                    });
+                    
+                    submitBtn = document.createElement('button');
+                    submitBtn.className = 'choice-submit-btn';
+                    submitBtn.textContent = 'Valider';
+                    submitBtn.disabled = true;
+                    submitBtn.onclick = () => {
+                        const selected = document.querySelector(`input[name="${radioGroupName}"]:checked`);
+                        if (selected) {
+                            const selectedValue = selected.value;
+                            
+                            // Envoyer la réponse
+                            userInput.value = selectedValue;
+                            sendMessage();
+                        }
+                    };
+                    
+                    choiceContainer.appendChild(submitBtn);
+                    bubble.appendChild(choiceContainer);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    return; // Ne pas continuer avec les boutons Oui/Non
+                }
+            }
+            
             // Détecter les questions oui/non
             const yesNoPatterns = [
                 /pouvez-vous me confirmer/i,
@@ -1269,8 +1494,15 @@
             currentSessionId = null;
         }
 
-        async function loadExistingProfile(sessionId) {
+        async function loadExistingProfile(sessionId, skipIfPhase1Complete = false) {
             try {
+                // VÉRIFICATION CRITIQUE : Ne JAMAIS restaurer une session si pas de compte
+                const savedEmail = localStorage.getItem('spaix_account_email');
+                if (!savedEmail || savedEmail.trim() === '' || savedEmail === 'null' || savedEmail === 'undefined') {
+                    console.log('⏭️ Pas de compte valide, on ne restaure pas la session');
+                    return false;
+                }
+                
                 console.log('📂 Chargement du profil pour session:', sessionId);
                 const response = await fetch(`/api/profile/${sessionId}`);
                 if (response.ok) {
@@ -1299,12 +1531,40 @@
         }
 
         // Créer ou restaurer un profil au chargement de la page
-        async function initializeProfile(forceNew = false) {
+        async function initializeProfile(forceNew = false, skipRestoreIfNoAccount = false) {
             // Si on force une nouvelle session, supprimer l'ancienne
             if (forceNew) {
                 console.log('🔄 Création d\'une nouvelle session (rechargement forcé)');
                 clearSession();
             } else {
+                // Si skipRestoreIfNoAccount est true, vérifier d'abord s'il y a un compte
+                if (skipRestoreIfNoAccount) {
+                    const savedEmail = localStorage.getItem('spaix_account_email');
+                    if (!savedEmail) {
+                        console.log('   - Pas de compte, ne pas restaurer la session');
+                        clearSession();
+                        // Créer une nouvelle session directement
+                        if (!currentSessionId) {
+                            try {
+                                console.log('📝 Création d\'un nouveau profil (pas de compte)...');
+                                const response = await fetch('/api/profile/start', {
+                                    method: 'POST'
+                                });
+                                const data = await response.json();
+                                currentSessionId = data.session_id;
+                                currentPhase = data.phase;
+                                saveSessionId(currentSessionId);
+                                updatePhaseIndicator(currentPhase, currentSessionId);
+                                console.log('✅ Nouveau profil créé:', currentSessionId);
+                                return;
+                            } catch (error) {
+                                console.error('❌ Erreur lors de la création du profil:', error);
+                            }
+                        }
+                        return;
+                    }
+                }
+                
                 // D'abord, essayer de restaurer une session existante
                 const savedSessionId = getSavedSessionId();
                 if (savedSessionId) {
@@ -1405,25 +1665,121 @@
             } else {
                 indicator.style.display = 'none';
             }
+            
+            // IMPORTANT : Ne PAS restaurer currentSessionId depuis sessionId si l'utilisateur n'a pas de compte
+            // Cette fonction ne doit QUE mettre à jour l'affichage, pas restaurer la session
         }
 
-        async function startDocumentCheck() {
+        async function startDocumentCheck(forceNewSession = false) {
             try {
+                console.log('📋 startDocumentCheck() appelé, forceNewSession:', forceNewSession);
+                console.log('   - currentSessionId avant:', currentSessionId);
+                console.log('   - localStorage spaix_session_id avant:', localStorage.getItem('spaix_session_id'));
+                
                 // Réinitialiser les variables de suivi
                 lastQuestionAsked = null;
                 questionInProgress = false;
                 
-                // Si on a déjà une session, l'utiliser, sinon en créer une nouvelle
-                if (!currentSessionId) {
+                // Si on force une nouvelle session, TOUJOURS créer une nouvelle session
+                if (forceNewSession) {
+                    console.log('🔄 Forcer création d\'une nouvelle session');
+                    // NETTOYER COMPLÈTEMENT avant de créer une nouvelle session
+                    clearSession();
+                    currentSessionId = null; // S'assurer que currentSessionId est null
+                    currentPhase = 'collecte_info';
+                    
+                    // Double vérification : supprimer toute trace de session dans localStorage
+                    localStorage.removeItem('spaix_session_id');
+                    localStorage.removeItem('spaix_session_timestamp');
+                    
+                    // Triple vérification : s'assurer que currentSessionId est vraiment null
+                    if (currentSessionId) {
+                        console.log('   - ⚠️ currentSessionId encore défini, forcer à null');
+                        currentSessionId = null;
+                    }
+                    
+                    console.log('   - Session nettoyée, création d\'une nouvelle...');
+                    console.log('   - currentSessionId après nettoyage:', currentSessionId);
+                    console.log('   - localStorage spaix_session_id après nettoyage:', localStorage.getItem('spaix_session_id'));
+                    
+                    const response = await fetch('/api/profile/start', {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    currentSessionId = data.session_id;
+                    console.log('   - ✅ Nouvelle session créée:', currentSessionId);
+                    saveSessionId(currentSessionId);
+                } else if (!currentSessionId) {
+                    // Pas de session : en créer une nouvelle
                     const response = await fetch('/api/profile/start', {
                         method: 'POST'
                     });
                     const data = await response.json();
                     currentSessionId = data.session_id;
                     saveSessionId(currentSessionId);
+                } else {
+                    // Vérifier si la session actuelle a une Phase 1 complète
+                    // Si oui, créer une nouvelle session pour recommencer
+                    try {
+                        const profileResponse = await fetch(`/api/profile/${currentSessionId}`);
+                        if (profileResponse.ok) {
+                            const profile = await profileResponse.json();
+                            if (profile.is_phase1_complete) {
+                                // Phase 1 déjà complète : créer une nouvelle session
+                                console.log('🔄 Phase 1 déjà complète, création d\'une nouvelle session');
+                                clearSession();
+                                currentSessionId = null; // S'assurer que currentSessionId est null
+                                const response = await fetch('/api/profile/start', {
+                                    method: 'POST'
+                                });
+                                const data = await response.json();
+                                currentSessionId = data.session_id;
+                                saveSessionId(currentSessionId);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Erreur lors de la vérification du profil:', error);
+                    }
                 }
                 
                 currentPhase = 'collecte_info';
+                
+                // VÉRIFICATION CRITIQUE : S'assurer que la nouvelle session n'est PAS complète
+                // Une nouvelle session ne devrait JAMAIS être complète
+                console.log('🔍 Vérification finale - currentSessionId:', currentSessionId);
+                console.log('🔍 Vérification finale - currentPhase:', currentPhase);
+                
+                // Vérifier le profil pour s'assurer qu'il n'est pas complète
+                if (currentSessionId) {
+                    try {
+                        const verifyResponse = await fetch(`/api/profile/${currentSessionId}`);
+                        if (verifyResponse.ok) {
+                            const verifyProfile = await verifyResponse.json();
+                            console.log('🔍 Profil vérifié après création:', verifyProfile);
+                            console.log('🔍 is_phase1_complete:', verifyProfile.is_phase1_complete);
+                            
+                            // Si le profil est complète, c'est une erreur - créer une nouvelle session
+                            if (verifyProfile.is_phase1_complete) {
+                                console.error('❌ ERREUR: Nouvelle session détectée comme complète !');
+                                console.error('   - Session ID:', currentSessionId);
+                                console.error('   - Profil:', verifyProfile);
+                                // Créer une nouvelle session
+                                clearSession();
+                                currentSessionId = null;
+                                const newResponse = await fetch('/api/profile/start', {
+                                    method: 'POST'
+                                });
+                                const newData = await newResponse.json();
+                                currentSessionId = newData.session_id;
+                                saveSessionId(currentSessionId);
+                                console.log('✅ Nouvelle session créée après erreur:', currentSessionId);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('❌ Erreur lors de la vérification du profil:', error);
+                    }
+                }
+                
                 updatePhaseIndicator(currentPhase, currentSessionId);
                 
                 addMessage('📋 Parfait ! Je vais vous poser quelques questions pour déterminer exactement quels documents vous devez fournir.', false);
@@ -1448,51 +1804,30 @@
 
         async function startForm() {
             try {
+                console.log('🚀 startForm() appelé - "Commencer mon inscription complète"');
+                
                 // Réinitialiser les variables de suivi
                 lastQuestionAsked = null;
                 questionInProgress = false;
                 
-                // Vérifier si l'utilisateur a un compte
+                // COMPORTEMENT ATTENDU pour "Commencer mon inscription complète" :
+                // 1. Demander si l'utilisateur a déjà un compte
+                // 2. Si OUI : demander de se connecter, puis vérifier Phase 1
+                //    - Si Phase 1 complète → Phase 2
+                //    - Si Phase 1 non complète → Phase 1
+                // 3. Si NON : commencer par la Phase 1
+                
+                // Vérifier si l'utilisateur a déjà un compte connecté
                 const savedEmail = localStorage.getItem('spaix_account_email');
+                const hasAccount = savedEmail && savedEmail.trim() !== '' && savedEmail !== 'null' && savedEmail !== 'undefined';
                 
-                if (!savedEmail) {
-                    // Pas de compte : demander de se connecter ou créer un compte
-                    addMessage('🔐 Pour accéder à la Phase 2 (remplissage du formulaire), vous devez d\'abord compléter la Phase 1.', false);
-                    addMessage('📋 La Phase 1 consiste à déterminer quels documents vous devez fournir.', false);
-                    addMessage('', false);
-                    addMessage('Souhaitez-vous :', false, [
-                        { text: 'Commencer par la Phase 1' },
-                        { text: 'Créer un compte et continuer', secondary: true }
-                    ]);
-                    lastQuestionAsked = 'phase2_no_account';
-                    return;
-                }
+                console.log('   - savedEmail:', savedEmail);
+                console.log('   - hasAccount:', hasAccount);
                 
-                // L'utilisateur a un compte : vérifier si Phase 1 est complète
-                // Essayer de charger le profil depuis le compte
-                try {
-                    // D'abord, vérifier si on a une session locale avec Phase 1 complète
-                    const savedSessionId = getSavedSessionId();
-                    if (savedSessionId) {
-                        const localProfileResponse = await fetch(`/api/profile/${savedSessionId}`);
-                        if (localProfileResponse.ok) {
-                            const localProfile = await localProfileResponse.json();
-                            if (localProfile.is_phase1_complete) {
-                                // Phase 1 complète dans la session locale : continuer avec Phase 2
-                                currentSessionId = savedSessionId;
-                                saveSessionId(currentSessionId);
-                                currentPhase = 'remplissage_formulaire';
-                                updatePhaseIndicator(currentPhase, currentSessionId);
-                                addMessage('✅ Votre Phase 1 est complète. Passons à la Phase 2 !', false);
-                                await startPhase2();
-                                return;
-                            }
-                        }
-                    }
-                    
-                    // Si pas de session locale complète, essayer de charger depuis le compte
-                    // On va demander à l'utilisateur de se connecter pour récupérer ses données
-                    addMessage('🔐 Pour accéder à votre progression sauvegardée, veuillez vous connecter.', false);
+                if (hasAccount) {
+                    // L'utilisateur a un compte : demander de se connecter pour récupérer sa progression
+                    console.log('   - ✅ Compte détecté, demander de se connecter');
+                    addMessage('🔐 Vous avez déjà un compte. Pour accéder à votre progression sauvegardée, veuillez vous connecter.', false);
                     addMessage('', false);
                     addMessage('Souhaitez-vous :', false, [
                         { text: 'Se connecter' },
@@ -1500,16 +1835,18 @@
                     ]);
                     lastQuestionAsked = 'phase2_need_login';
                     return;
-                    
-                } catch (error) {
-                    console.error('Erreur lors de la vérification du compte:', error);
+                } else {
+                    // Pas de compte : demander si l'utilisateur a déjà un compte
+                    console.log('   - ❌ Pas de compte détecté, demander si l\'utilisateur a un compte');
+                    addMessage('📋 Pour commencer votre inscription complète, avez-vous déjà un compte ?', false);
+                    addMessage('', false);
+                    addMessage('Si oui, vous pourrez vous connecter pour récupérer votre progression. Si non, nous commencerons par la Phase 1.', false, [
+                        { text: 'Oui, j\'ai un compte' },
+                        { text: 'Non, je n\'ai pas de compte', secondary: true }
+                    ]);
+                    lastQuestionAsked = 'has_account_check';
+                    return;
                 }
-                
-                // Si on arrive ici, soit pas de compte valide, soit problème de chargement
-                // Proposer de commencer par Phase 1
-                addMessage('📋 Pour accéder à la Phase 2, vous devez d\'abord compléter la Phase 1.', false);
-                addMessage('Je vais vous poser quelques questions pour déterminer les documents nécessaires.', false);
-                await startDocumentCheck();
                 
             } catch (error) {
                 console.error('Erreur lors du démarrage:', error);
@@ -1534,13 +1871,13 @@
                     profile.inscrit_autre_etablissement !== null && 
                     profile.has_jdc !== null) {
                     
-                    // Calculer les documents
+                    // Calculer les documents et passer à la phase 2
                     const updateResponse = await fetch(`/api/profile/${currentSessionId}/phase2`, {
                         method: 'POST'
                     });
                     const updateData = await updateResponse.json();
                     
-                    // Afficher le résumé
+                    // Afficher le résumé avec les documents recalculés
                     showPhase1Summary(updateData.profile);
                 }
                 
@@ -1609,11 +1946,19 @@
             addMessage('', false);
             
             // Vérifier si l'utilisateur a déjà un compte
-            const hasAccount = localStorage.getItem('spaix_account_email');
+            const savedEmail = localStorage.getItem('spaix_account_email');
+            const hasAccount = savedEmail && savedEmail.trim() !== '';
             
-            if (skipAccountCreation || hasAccount) {
-                // L'utilisateur est déjà connecté ou on doit skip la création de compte
+            console.log('🔍 showPhase1Summary - skipAccountCreation:', skipAccountCreation);
+            console.log('🔍 showPhase1Summary - savedEmail:', savedEmail);
+            console.log('🔍 showPhase1Summary - hasAccount:', hasAccount);
+            
+            // TOUJOURS proposer la création de compte si skipAccountCreation est false
+            // sauf si l'utilisateur a vraiment un compte connecté
+            if (skipAccountCreation) {
+                // L'utilisateur est déjà connecté (skipAccountCreation = true)
                 // Proposer directement la Phase 2
+                console.log('✅ Utilisateur déjà connecté, skip création de compte');
                 setTimeout(() => {
                     lastQuestionAsked = 'phase2_confirm';
                     addMessage('📋 Souhaitez-vous maintenant passer à la <strong>Phase 2</strong> : le remplissage du formulaire d\'inscription ?', false, [
@@ -1627,7 +1972,8 @@
                     }, 100);
                 }, 500);
             } else {
-                // Pas de compte : proposer de créer un compte
+                // Pas de compte ou skipAccountCreation = false : TOUJOURS proposer de créer un compte
+                console.log('💾 Pas de compte détecté, proposition de création de compte');
                 setTimeout(() => {
                     lastQuestionAsked = 'create_account';
                     addMessage('💾 Pour sauvegarder votre progression et pouvoir y revenir plus tard, souhaitez-vous <strong>créer un compte</strong> ?', false, [
@@ -1755,14 +2101,23 @@
             if (!currentSessionId) return;
             
             try {
-                // Demander de créer un compte pour sauvegarder la progression
-                addMessage('📝 Pour sauvegarder votre progression dans la Phase 2, souhaitez-vous créer un compte ?', false, [
-                    { text: 'Oui, créer un compte' },
-                    { text: 'Non, continuer sans compte', secondary: true }
-                ]);
+                // Vérifier si l'utilisateur a déjà un compte
+                const savedEmail = localStorage.getItem('spaix_account_email');
+                const hasAccount = savedEmail && savedEmail.trim() !== '' && savedEmail !== 'null' && savedEmail !== 'undefined';
                 
-                // Note: La création de compte sera gérée dans detectAndUpdateProfile
-                // Pour l'instant, on continue directement
+                // Si l'utilisateur n'a pas de compte, demander s'il veut en créer un
+                if (!hasAccount) {
+                    addMessage('📝 Pour sauvegarder votre progression dans la Phase 2, souhaitez-vous créer un compte ?', false, [
+                        { text: 'Oui, créer un compte' },
+                        { text: 'Non, continuer sans compte', secondary: true }
+                    ]);
+                    lastQuestionAsked = 'phase2_account_creation';
+                    // Ne pas continuer tant que l'utilisateur n'a pas répondu
+                    return;
+                }
+                
+                // L'utilisateur a déjà un compte : continuer directement avec la Phase 2
+                console.log('✅ Utilisateur déjà connecté, passage direct à la Phase 2');
                 const response = await fetch(`/api/profile/${currentSessionId}/phase2`, {
                     method: 'POST'
                 });
@@ -1915,11 +2270,13 @@
                 // Vérifier si on peut passer à la phase 2
                 if (data.phase1_complete && currentPhase === 'collecte_info') {
                     console.log('✅ Phase 1 complète, passage à la phase 2');
-                    // Passer automatiquement à la phase 2
-                    await fetch(`/api/profile/${currentSessionId}/phase2`, {
+                    // Passer automatiquement à la phase 2 et récupérer le profil avec documents recalculés
+                    const phase2Response = await fetch(`/api/profile/${currentSessionId}/phase2`, {
                         method: 'POST'
                     });
-                    showPhase1Summary(data.profile);
+                    const phase2Data = await phase2Response.json();
+                    // Utiliser le profil de phase2 qui a les documents recalculés
+                    showPhase1Summary(phase2Data.profile);
                     return data;
                 }
                 

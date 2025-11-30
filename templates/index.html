@@ -14,7 +14,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #9ca3af;
+            background: #ffffff;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -25,6 +25,7 @@
         .container {
             background: white;
             border-radius: 24px;
+            border: 2px solid #9ca3af;
             box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
             width: 100%;
             max-width: 900px;
@@ -53,7 +54,7 @@
         }
         
         .header-logo img {
-            height: 40px;
+            height: 60px;
             width: auto;
         }
         
@@ -679,12 +680,12 @@
                     👋 Bonjour ! Je suis votre assistant pour l'inscription à Sciences Po Aix.
                     <p style="margin-top: 15px; font-weight: 600;">Que souhaitez-vous faire aujourd'hui ?</p>
                     <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
-                        <button onclick="startDocumentCheck()" style="padding: 18px 20px; background: #EE2737; color: white; border: none; border-radius: 14px; cursor: pointer; font-size: 15px; text-align: left; box-shadow: 0 4px 12px rgba(238, 39, 55, 0.3); transition: all 0.2s; font-weight: 500;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(238, 39, 55, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(238, 39, 55, 0.3)'">
+                        <button onclick="startDocumentCheck()" style="padding: 18px 20px; background: white; color: #EE2737; border: 2px solid #EE2737; border-radius: 14px; cursor: pointer; font-size: 15px; text-align: left; box-shadow: 0 4px 12px rgba(238, 39, 55, 0.2); transition: all 0.2s; font-weight: 500;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(238, 39, 55, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(238, 39, 55, 0.2)'">
                             <div style="font-size: 20px; margin-bottom: 6px;">📋</div>
                             <div style="font-weight: 600; margin-bottom: 4px;">Découvrir quels documents je dois fournir</div>
                             <div style="font-size: 13px; opacity: 0.95; font-weight: 400;">Je vais vous poser quelques questions pour déterminer exactement les pièces nécessaires</div>
                         </button>
-                        <button onclick="startForm()" style="padding: 18px 20px; background: #EE2737; color: white; border: none; border-radius: 14px; cursor: pointer; font-size: 15px; text-align: left; box-shadow: 0 4px 12px rgba(238, 39, 55, 0.3); transition: all 0.2s; font-weight: 500;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(238, 39, 55, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(238, 39, 55, 0.3)'">
+                        <button onclick="startForm()" style="padding: 18px 20px; background: white; color: #EE2737; border: 2px solid #EE2737; border-radius: 14px; cursor: pointer; font-size: 15px; text-align: left; box-shadow: 0 4px 12px rgba(238, 39, 55, 0.2); transition: all 0.2s; font-weight: 500;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(238, 39, 55, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(238, 39, 55, 0.2)'">
                             <div style="font-size: 20px; margin-bottom: 6px;">📝</div>
                             <div style="font-weight: 600; margin-bottom: 4px;">Commencer mon inscription complète</div>
                             <div style="font-size: 13px; opacity: 0.95; font-weight: 400;">Processus guidé en 2 phases : détermination des documents puis remplissage du formulaire</div>

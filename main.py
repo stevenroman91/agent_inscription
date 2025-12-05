@@ -149,6 +149,12 @@ async def chat_endpoint(chat_message: ChatMessage):
     
     if chat_message.session_id:
         context_parts.append(f"[SESSION_ID: {chat_message.session_id}]")
+        
+        # Si on est en Phase 2, forcer la consultation du profil en ajoutant une instruction explicite
+        profile = profile_manager.load_profile(chat_message.session_id)
+        if profile and profile.phase == "remplissage_formulaire":
+            # Ajouter une instruction pour consulter le profil
+            context_parts.append(f"[INSTRUCTION: Tu DOIS utiliser l'outil ConsulterProfil avec le session_id ci-dessus AVANT de répondre. C'est OBLIGATOIRE.]")
     
     if chat_message.account_email:
         context_parts.append(f"[ACCOUNT_EMAIL: {chat_message.account_email}]")
@@ -321,6 +327,18 @@ async def start_phase2(session_id: str):
     # pour s'assurer que tous les documents conditionnels sont inclus
     profile.calculate_required_documents()
     
+    # Initialiser form_data si nécessaire
+    if not profile.form_data:
+        profile.form_data = {}
+    
+    # Ajouter automatiquement le type d'inscription dans form_data depuis Phase 1
+    if profile.inscription_type and "type_inscription" not in profile.form_data:
+        # Mapper inscription_type vers type_inscription du formulaire
+        if profile.inscription_type == "premiere_inscription":
+            profile.form_data["type_inscription"] = "1ère Inscription"
+        elif profile.inscription_type in ["lap", "master", "prep_concours"]:
+            profile.form_data["type_inscription"] = "Réinscription"
+    
     profile.move_to_phase2()
     profile_manager.save_profile(profile)
     
@@ -350,6 +368,34 @@ async def update_form_data(session_id: str, request: Request):
     profile_manager.save_profile(profile)
     
     return {"message": "Données du formulaire mises à jour", "profile": profile.to_dict()}
+
+
+@app.get("/api/profile/{session_id}/missing-fields")
+async def get_missing_fields(session_id: str):
+    """Retourne la liste des champs manquants pour le formulaire"""
+    profile = profile_manager.load_profile(session_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profil non trouvé")
+    
+    if profile.phase != "remplissage_formulaire":
+        raise HTTPException(status_code=400, detail="Vous devez d'abord compléter la phase 1")
+    
+    from form_sections import get_missing_sections
+    missing = get_missing_sections(profile.form_data or {})
+    
+    # Extraire tous les champs manquants dans l'ordre
+    missing_fields = []
+    for section in missing:
+        if "missing_fields" in section:
+            missing_fields.extend(section["missing_fields"])
+        elif "field" in section:
+            missing_fields.append(section["field"])
+    
+    return {
+        "missing_fields": missing_fields,
+        "next_field": missing_fields[0] if missing_fields else None,
+        "total_missing": len(missing_fields)
+    }
 
 
 # Endpoints pour les comptes utilisateurs
@@ -514,5 +560,7 @@ async def delete_form_progress(session_id: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Railway utilise la variable d'environnement PORT
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 

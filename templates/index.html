@@ -743,6 +743,10 @@
         const userInput = document.getElementById('userInput');
         const sendButton = document.getElementById('sendButton');
         const status = document.getElementById('status');
+        
+        // Variable pour stocker la dernière question de l'agent
+        let lastAgentQuestion = '';
+        let currentField = null; // Champ en cours de collecte (Option 2)
 
         function addMessage(text, isUser, quickReplies = null) {
             const messageDiv = document.createElement('div');
@@ -761,8 +765,10 @@
                     const btn = document.createElement('button');
                     btn.className = 'quick-reply-btn' + (reply.secondary ? ' secondary' : '');
                     btn.textContent = reply.text;
-                    btn.onclick = () => {
-                        // Simuler l'envoi du message
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('✅ Bouton quick reply cliqué:', reply.text);
                         userInput.value = reply.text;
                         sendMessage();
                     };
@@ -788,9 +794,111 @@
             }
         }
 
+        // Fonction pour obtenir le prochain champ manquant (Option 2)
+        async function getNextMissingField() {
+            if (!currentSessionId || currentPhase !== 'remplissage_formulaire') {
+                return null;
+            }
+            
+            try {
+                const response = await fetch(`/api/profile/${currentSessionId}/missing-fields`);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('📋 Champs manquants:', data.missing_fields);
+                    console.log('➡️ Prochain champ:', data.next_field);
+                    return data.next_field;
+                }
+            } catch (error) {
+                console.error('❌ Erreur lors de la récupération des champs manquants:', error);
+            }
+            return null;
+        }
+
+        // Fonction pour sauvegarder automatiquement les données du formulaire en Phase 2 (Option 2)
+        async function saveFormDataIfPhase2(userMessage) {
+            if (currentPhase !== 'remplissage_formulaire' || !currentSessionId) {
+                return;
+            }
+            
+            // Option 2 : Utiliser le champ en cours au lieu de détecter depuis le texte
+            let fieldToSave = currentField;
+            
+            // Si pas de champ en cours, obtenir le prochain champ manquant
+            if (!fieldToSave) {
+                fieldToSave = await getNextMissingField();
+                if (fieldToSave) {
+                    currentField = fieldToSave;
+                    console.log('✅ Champ en cours défini:', currentField);
+                }
+            }
+            
+            if (!fieldToSave) {
+                console.log('⚠️ Aucun champ en cours et aucun champ manquant trouvé');
+                return;
+            }
+            
+            // Sauvegarder la réponse
+            try {
+                // Pour les choix multiples (situation familiale, situation militaire), 
+                // convertir le numéro en format complet si nécessaire
+                let valueToSave = userMessage.trim();
+                if (fieldToSave === 'situation_familiale' && /^\d+$/.test(valueToSave)) {
+                    const num = parseInt(valueToSave);
+                    const situations = {
+                        1: '1 - Seul sans enfant',
+                        2: '2 - En couple sans enfant',
+                        3: '3 - Seul avec enfant(s)',
+                        4: '4 - En couple avec enfant(s)'
+                    };
+                    if (situations[num]) {
+                        valueToSave = situations[num];
+                    }
+                }
+                
+                // Pour les champs numériques (numero_etudiant, numero_ines), accepter les réponses numériques simples
+                if ((fieldToSave === 'numero_etudiant' || fieldToSave === 'numero_ines') && /^\d+$/.test(valueToSave)) {
+                    // Garder la valeur numérique telle quelle
+                    valueToSave = valueToSave;
+                }
+                
+                console.log(`💾 Sauvegarde automatique (Option 2): ${fieldToSave} = ${valueToSave}`);
+                const response = await fetch(`/api/profile/${currentSessionId}/form-data`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        form_data: {
+                            [fieldToSave]: valueToSave
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log(`✅ Données sauvegardées: ${fieldToSave} = ${valueToSave}`);
+                    // Mettre à jour le champ en cours avec le prochain champ manquant
+                    currentField = await getNextMissingField();
+                    console.log('➡️ Nouveau champ en cours:', currentField);
+                } else {
+                    const errorText = await response.text();
+                    console.error(`❌ Erreur lors de la sauvegarde de ${fieldToSave}:`, errorText);
+                }
+            } catch (error) {
+                console.error(`❌ Erreur lors de la sauvegarde automatique:`, error);
+            }
+        }
+
         async function sendMessage() {
             const message = userInput.value.trim();
             if (!message) return;
+
+            // Sauvegarder automatiquement les données du formulaire si on est en Phase 2 (Option 2)
+            if (currentPhase === 'remplissage_formulaire') {
+                console.log('💾 Tentative de sauvegarde automatique en Phase 2 (Option 2)');
+                console.log('   - Champ en cours:', currentField);
+                console.log('   - Réponse utilisateur:', message);
+                await saveFormDataIfPhase2(message);
+            }
 
             // Afficher le message de l'utilisateur
             addMessage(message, true);
@@ -874,10 +982,36 @@
                         currentPhase = 'remplissage_formulaire';
                         updatePhaseIndicator(currentPhase, currentSessionId);
                         
-                        addMessage('📋 Parfait ! Passons à la Phase 2 : le remplissage du formulaire d\'inscription.', false);
-                        addMessage('Je vais vous poser des questions pour remplir chaque champ du formulaire.', false);
-                        addMessage('', false);
-                        addMessage('Commençons par vos informations personnelles. Quel est votre nom de famille ?', false);
+                        // Vérifier le profil avant de poser des questions
+                        const profileCheck = await fetch(`/api/profile/${currentSessionId}`);
+                        if (profileCheck.ok) {
+                            const profile = await profileCheck.json();
+                            const hasNom = profile.form_data && profile.form_data.nom_naissance;
+                            
+                            if (hasNom) {
+                                addMessage('📋 Parfait ! Passons à la Phase 2 : le remplissage du formulaire d\'inscription.', false);
+                                addMessage('Je vais continuer à remplir votre formulaire avec les informations manquantes.', false);
+                                // Laisser l'agent continuer
+                                setTimeout(() => {
+                                    userInput.value = 'Continuer le remplissage du formulaire';
+                                    sendMessage();
+                                }, 1000);
+                            } else {
+                                addMessage('📋 Parfait ! Passons à la Phase 2 : le remplissage du formulaire d\'inscription.', false);
+                                addMessage('Je vais vous poser des questions pour remplir chaque champ du formulaire.', false);
+                                // Laisser l'agent commencer
+                                setTimeout(() => {
+                                    userInput.value = 'Commencer le remplissage du formulaire';
+                                    sendMessage();
+                                }, 1000);
+                            }
+                        } else {
+                            addMessage('📋 Parfait ! Passons à la Phase 2 : le remplissage du formulaire d\'inscription.', false);
+                            setTimeout(() => {
+                                userInput.value = 'Commencer le remplissage du formulaire';
+                                sendMessage();
+                            }, 1000);
+                        }
                     } catch (error) {
                         showStatus('Erreur lors du démarrage de la Phase 2', 'error');
                     }
@@ -1058,10 +1192,19 @@
                                     if (data.error) {
                                         responseBubble.className = 'message-bubble error';
                                     } else {
+                                        // Stocker la dernière question de l'agent pour Phase 2
+                                        if (currentPhase === 'remplissage_formulaire') {
+                                            lastAgentQuestion = responseBubble.textContent || responseBubble.innerText || '';
+                                            console.log('📝 Dernière question de l\'agent stockée:', lastAgentQuestion);
+                                        }
                                         // Vérifier si c'est une question oui/non et ajouter des boutons
                                         // Attendre un peu pour que tout le contenu soit affiché
                                         setTimeout(() => {
                                             checkAndAddQuickReplies(responseBubble);
+                                            // Mettre à jour lastAgentQuestion après que le contenu soit complètement chargé
+                                            if (currentPhase === 'remplissage_formulaire') {
+                                                lastAgentQuestion = responseBubble.textContent || responseBubble.innerText || '';
+                                            }
                                         }, 500);
                                     }
                                     sendButton.disabled = false;
@@ -1336,21 +1479,35 @@
             const text = bubble.textContent || bubble.innerText || '';
             const lowerText = text.toLowerCase();
             
-            // Détecter les questions avec choix multiples (format: "(1 - ..., 2 - ..., 3 - ..., 4 - ...)")
-            const choicePattern = /\((\d+)\s*-\s*[^,)]+,\s*(\d+)\s*-\s*[^,)]+,\s*(\d+)\s*-\s*[^,)]+,\s*(\d+)\s*-\s*[^)]+\)/i;
+            // Détecter les questions avec choix multiples (format: "(1 - ..., 2 - ..., 3 - ..., 4 - ...)" ou variantes)
+            // Pattern plus flexible pour détecter les choix multiples même avec des variations
+            const choicePattern = /\((\d+)\s*-\s*[^,)]+(?:,\s*(\d+)\s*-\s*[^,)]+)+\)/i;
             const choiceMatch = text.match(choicePattern);
             
             if (choiceMatch && !bubble.querySelector('.choice-options')) {
-                // Extraire les options
+                // Extraire les options - pattern plus flexible
                 const options = [];
                 const fullMatch = choiceMatch[0];
-                const optionPattern = /(\d+)\s*-\s*([^,)]+)/g;
+                // Pattern amélioré pour capturer toutes les options même avec des espaces variables
+                const optionPattern = /(\d+)\s*-\s*([^,)]+?)(?=\s*,\s*\d+\s*-|\s*\))/g;
                 let match;
                 while ((match = optionPattern.exec(fullMatch)) !== null) {
                     options.push({
                         value: match[1],
                         label: match[2].trim()
                     });
+                }
+                
+                // Si aucune option n'a été trouvée avec le pattern amélioré, essayer un pattern plus simple
+                if (options.length === 0) {
+                    const simplePattern = /(\d+)\s*-\s*([^,)]+)/g;
+                    let simpleMatch;
+                    while ((simpleMatch = simplePattern.exec(fullMatch)) !== null) {
+                        options.push({
+                            value: simpleMatch[1],
+                            label: simpleMatch[2].trim()
+                        });
+                    }
                 }
                 
                 if (options.length > 0) {
@@ -1410,13 +1567,33 @@
                 }
             }
             
+            // Détecter les questions numériques (combien, nombre, etc.) - NE PAS afficher de boutons Oui/Non
+            const numericQuestionPatterns = [
+                /combien/i,
+                /nombre/i,
+                /quantité/i,
+                /combien de/i,
+                /quel est le nombre/i,
+                /quel nombre/i,
+                /combien d'enfants/i,
+                /nombre d'enfants/i,
+                /combien avez-vous/i,
+                /combien avez vous/i
+            ];
+            
+            const isNumericQuestion = numericQuestionPatterns.some(pattern => pattern.test(text));
+            
+            // Si c'est une question numérique, ne pas afficher de boutons Oui/Non
+            if (isNumericQuestion) {
+                return; // Laisser l'utilisateur saisir un nombre dans le champ de texte
+            }
+            
             // Détecter les questions oui/non
             const yesNoPatterns = [
                 /pouvez-vous me confirmer/i,
                 /pouvez-vous confirmer/i,
                 /confirmer/i,
                 /êtes-vous/i,
-                /avez-vous/i,
                 /souhaitez-vous/i,
                 /voulez-vous/i,
                 /est-ce que/i,
@@ -1426,11 +1603,10 @@
                 /rassemblé/i
             ];
             
-            // Mots-clés qui indiquent une question oui/non
+            // Mots-clés qui indiquent une question oui/non (mais exclure "avez-vous" si c'est dans une question numérique)
             const yesNoKeywords = [
                 'confirmer',
                 'êtes-vous',
-                'avez-vous',
                 'rassemblés',
                 'rassemblé',
                 'rassemblé tous',
@@ -1445,8 +1621,9 @@
             const hasYesNoKeyword = yesNoKeywords.some(keyword => lowerText.includes(keyword));
             const hasConditional = lowerText.includes('si oui') || lowerText.includes('sinon');
             
-            // Détecter si c'est une question oui/non
-            const isYesNoQuestion = (hasQuestionMark || hasInterrogative || hasConditional) && 
+            // Détecter si c'est une question oui/non (mais exclure les questions numériques)
+            const isYesNoQuestion = !isNumericQuestion && 
+                                   (hasQuestionMark || hasInterrogative || hasConditional) && 
                                    (hasYesNoKeyword || hasConditional || lowerText.includes('rassembl'));
             
             if (isYesNoQuestion && !bubble.querySelector('.quick-reply-buttons')) {
@@ -1457,17 +1634,43 @@
                 const yesBtn = document.createElement('button');
                 yesBtn.className = 'quick-reply-btn';
                 yesBtn.textContent = 'Oui';
-                yesBtn.onclick = () => {
+                yesBtn.type = 'button'; // Empêcher le submit par défaut
+                yesBtn.onclick = async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('✅ Bouton Oui cliqué');
+                    if (!userInput) {
+                        console.error('❌ userInput non trouvé');
+                        return;
+                    }
+                    if (typeof sendMessage !== 'function') {
+                        console.error('❌ sendMessage n\'est pas une fonction');
+                        return;
+                    }
                     userInput.value = 'Oui';
-                    sendMessage();
+                    console.log('📝 Valeur mise dans userInput:', userInput.value);
+                    await sendMessage();
                 };
                 
                 const noBtn = document.createElement('button');
                 noBtn.className = 'quick-reply-btn secondary';
                 noBtn.textContent = 'Non';
-                noBtn.onclick = () => {
+                noBtn.type = 'button'; // Empêcher le submit par défaut
+                noBtn.onclick = async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('✅ Bouton Non cliqué');
+                    if (!userInput) {
+                        console.error('❌ userInput non trouvé');
+                        return;
+                    }
+                    if (typeof sendMessage !== 'function') {
+                        console.error('❌ sendMessage n\'est pas une fonction');
+                        return;
+                    }
                     userInput.value = 'Non';
-                    sendMessage();
+                    console.log('📝 Valeur mise dans userInput:', userInput.value);
+                    await sendMessage();
                 };
                 
                 replyContainer.appendChild(yesBtn);
@@ -2127,10 +2330,43 @@
                 currentPhase = 'remplissage_formulaire';
                 updatePhaseIndicator(currentPhase, currentSessionId);
                 
-                addMessage('📋 Parfait ! Passons à la Phase 2 : le remplissage du formulaire d\'inscription.', false);
-                addMessage('Je vais vous poser des questions pour remplir chaque champ du formulaire.', false);
-                addMessage('', false);
-                addMessage('Commençons par vos informations personnelles. Quel est votre nom de famille ?', false);
+                // Option 2 : Initialiser le champ en cours avec le premier champ manquant
+                currentField = await getNextMissingField();
+                console.log('✅ Phase 2 démarrée, champ en cours initialisé:', currentField);
+                
+                // Vérifier le profil pour voir quelles données sont déjà collectées
+                const profileResponse = await fetch(`/api/profile/${currentSessionId}`);
+                if (profileResponse.ok) {
+                    const profile = await profileResponse.json();
+                    const hasNom = profile.form_data && profile.form_data.nom_naissance;
+                    
+                    if (hasNom) {
+                        // Le nom est déjà collecté, laisser l'agent continuer avec la prochaine question
+                        addMessage('📋 Parfait ! Passons à la Phase 2 : le remplissage du formulaire d\'inscription.', false);
+                        addMessage('Je vais continuer à remplir votre formulaire avec les informations manquantes.', false);
+                        // Envoyer un message à l'agent pour qu'il consulte le profil et continue
+                        setTimeout(() => {
+                            userInput.value = 'Continuer le remplissage du formulaire';
+                            sendMessage();
+                        }, 1000);
+                    } else {
+                        // Le nom n'est pas encore collecté, laisser l'agent poser la question
+                        addMessage('📋 Parfait ! Passons à la Phase 2 : le remplissage du formulaire d\'inscription.', false);
+                        addMessage('Je vais vous poser des questions pour remplir chaque champ du formulaire.', false);
+                        // Envoyer un message à l'agent pour qu'il commence
+                        setTimeout(() => {
+                            userInput.value = 'Commencer le remplissage du formulaire';
+                            sendMessage();
+                        }, 1000);
+                    }
+                } else {
+                    // En cas d'erreur, laisser l'agent gérer
+                    addMessage('📋 Parfait ! Passons à la Phase 2 : le remplissage du formulaire d\'inscription.', false);
+                    setTimeout(() => {
+                        userInput.value = 'Commencer le remplissage du formulaire';
+                        sendMessage();
+                    }, 1000);
+                }
             } catch (error) {
                 showStatus('Erreur lors du démarrage de la Phase 2', 'error');
             }

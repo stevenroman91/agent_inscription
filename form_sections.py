@@ -23,8 +23,20 @@ FORM_SECTIONS = [
             "prenom_1": {"required": True, "format": "Texte en MAJUSCULES"},
             "prenom_2": {"required": False, "format": "Texte en MAJUSCULES (optionnel)"},
             "prenom_3": {"required": False, "format": "Texte en MAJUSCULES (optionnel)"},
-            "numero_etudiant": {"required": False, "format": "8 caractères (si réinscription)"},
-            "numero_ines": {"required": False, "format": "11 caractères"}
+            "numero_etudiant": {
+                "required": False, 
+                "format": "8 caractères",
+                "condition": "Réinscription uniquement",
+                "help": "N° Etudiant (8 caractères si réinscription). Si c'est votre première inscription, vous n'avez pas encore de numéro étudiant.",
+                "where_to_find": "Si vous êtes en réinscription, ce numéro figure sur votre carte étudiante de l'année précédente."
+            },
+            "numero_ines": {
+                "required": True, 
+                "format": "11 caractères",
+                "help": "N° INES (11 caractères). Bachelier : le numéro figure sur le relevé de notes du baccalauréat (N° INES/INE/BEA). Tout étudiant ayant pris une inscription dans une université française depuis 1995 dispose obligatoirement d'un N° INE/INES. S'il ne figure pas sur la carte d'étudiant, l'intéressé doit le demander à son établissement d'origine avant de s'inscrire à Aix-Marseille Université.",
+                "where_to_find": "Sur votre relevé de notes du baccalauréat (N° INES/INE/BEA) ou sur votre carte d'étudiant si vous avez déjà été inscrit dans une université française depuis 1995.",
+                "note": "⚠️ IMPORTANT : Le N° INES est demandé pour TOUS les étudiants, même en première inscription. Il figure sur le relevé de notes du baccalauréat."
+            }
         },
         "required": True
     },

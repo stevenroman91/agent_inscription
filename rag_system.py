@@ -129,6 +129,51 @@ Réponse détaillée et utile:"""
     
     def help_with_form_field(self, field_name: str) -> Dict[str, any]:
         """Aide à remplir un champ spécifique du formulaire"""
-        question = f"Comment remplir le champ '{field_name}' du dossier d'inscription? Quelle est la signification de ce champ et quels codes ou informations dois-je utiliser?"
+        # Mapper les noms de champs internes vers les noms utilisés dans le formulaire
+        field_mapping = {
+            "numero_etudiant": "N° Etudiant",
+            "numero_ines": "N° INES",
+            "nom_naissance": "Nom de naissance",
+            "prenom_1": "Prénom",
+            "date_naissance": "Date de naissance",
+            "situation_familiale": "Situation familiale",
+            "departement_naissance": "Département de naissance",
+            "pays_naissance": "Pays de naissance",
+            "nationalite": "Nationalité",
+            "premiere_inscription_universite_etablissement": "Etablissement première inscription université",
+            "bac_serie": "Série baccalauréat",
+            "bac_departement": "Département baccalauréat",
+            "csp_etudiant_code": "Code CSP étudiant",
+            "csp_parent_1": "Code CSP parent 1",
+            "csp_parent_2": "Code CSP parent 2",
+            "dernier_diplome_code": "Code diplôme",
+            "dernier_diplome_etablissement": "Etablissement dernier diplôme",
+            "diplome_postule_code_cpge": "Code CPGE"
+        }
+        
+        field_display_name = field_mapping.get(field_name, field_name)
+        
+        # Vérifier si le champ nécessite un code d'annexe
+        try:
+            from field_detection import requires_code, get_annexe_number
+            needs_code = requires_code(field_name)
+            annexe_num = get_annexe_number(field_name) if needs_code else None
+        except:
+            needs_code = "annexe" in field_name.lower() or "code" in field_name.lower()
+            annexe_num = None
+        
+        question = f"""Dans le dossier d'inscription administrative, pour le champ "{field_display_name}" (ou "{field_name}") :
+1. Quel est le format exact attendu (nombre de caractères, type de données, etc.) ?
+2. Où l'étudiant peut-il trouver cette information ?
+3. Y a-t-il des conditions particulières (par exemple : uniquement pour réinscription, uniquement pour bacheliers, etc.) ?
+4. Quelles sont les instructions spécifiques données dans le dossier d'inscription pour ce champ ?"""
+        
+        if needs_code and annexe_num:
+            question += f"\n5. ⚠️ IMPORTANT : Ce champ nécessite un CODE depuis l'ANNEXE {annexe_num}. Quels sont les codes disponibles dans l'annexe {annexe_num} pour ce champ ? Liste les codes avec leurs descriptions pour aider l'étudiant à choisir."
+        elif needs_code:
+            question += f"\n5. ⚠️ IMPORTANT : Ce champ nécessite un CODE depuis une ANNEXE. Quelle annexe contient les codes pour ce champ ? Liste les codes disponibles avec leurs descriptions."
+        
+        question += "\n\nDonne-moi toutes les informations utiles du dossier d'inscription pour aider l'étudiant à remplir ce champ correctement."
+        
         return self.query(question)
 

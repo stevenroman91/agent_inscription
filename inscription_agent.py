@@ -8,6 +8,7 @@ from langchain.tools import Tool
 from langchain.memory import ConversationBufferMemory
 from rag_system import RAGSystem
 from form_sections import FORM_SECTIONS, get_missing_sections, is_form_complete, get_section_by_field
+from field_detection import get_field_info, requires_code, get_annexe_number, is_choice_field, get_choice_options
 
 
 class InscriptionAgent:
@@ -35,7 +36,7 @@ class InscriptionAgent:
         rag_tool = Tool(
             name="ConsultationDocuments",
             func=lambda q: self.rag_system.query(q)["answer"],
-            description="Utilise cet outil pour consulter les documents officiels d'inscription (dossier, pièces à fournir, codes, annexes). Utilise-le quand tu as besoin d'informations précises sur le processus d'inscription."
+            description="Utilise cet outil pour consulter les documents officiels d'inscription (dossier, pièces à fournir, codes, annexes). Utilise-le quand tu as besoin d'informations précises sur le processus d'inscription. ⚠️ IMPORTANT : Si un champ nécessite un code d'annexe (ex: code département, code pays, code établissement), utilise cet outil pour obtenir la liste des codes disponibles depuis les annexes."
         )
         
         # Outil pour obtenir les codes
@@ -61,7 +62,7 @@ class InscriptionAgent:
         form_help_tool = Tool(
             name="AideChampFormulaire",
             func=lambda field: self.rag_system.help_with_form_field(field)["answer"],
-            description="Utilise cet outil quand un étudiant demande de l'aide pour remplir un champ spécifique du formulaire d'inscription."
+            description="🚨 IMPORTANT : Utilise cet outil AVANT de poser une question sur un champ du formulaire. Il te donne toutes les informations du dossier d'inscription : le format attendu, où trouver l'information, les conditions (ex: uniquement pour réinscription), le nombre de caractères, etc. Utilise ces informations pour aider l'étudiant de manière précise et utile."
         )
         
         # Outil pour consulter le profil de l'étudiant
@@ -90,6 +91,8 @@ class InscriptionAgent:
             
             info = f"PROFIL ÉTUDIANT:\n"
             info += f"- Type d'inscription: {profile.inscription_type or 'Non défini'}\n"
+            info += f"  ⚠️ IMPORTANT : Si 'Type d'inscription' = 'premiere_inscription', l'étudiant est en PREMIÈRE INSCRIPTION → NE PAS demander le N° étudiant (il n'en a pas encore)\n"
+            info += f"  ⚠️ IMPORTANT : Si 'Type d'inscription' = 'lap', 'master', ou 'prep_concours', l'étudiant est en RÉINSCRIPTION → tu PEUX demander le N° étudiant\n"
             info += f"- Boursier: {profile.is_boursier if profile.is_boursier is not None else 'Non défini'}\n"
             info += f"- Mineur: {profile.is_mineur if profile.is_mineur is not None else 'Non défini'}\n"
             info += f"- Inscrit ailleurs: {profile.inscrit_autre_etablissement if profile.inscrit_autre_etablissement is not None else 'Non défini'}\n"
@@ -100,21 +103,37 @@ class InscriptionAgent:
             
             # Ajouter les données du formulaire si disponibles
             if profile.form_data:
-                info += f"\nDONNÉES DU FORMULAIRE DÉJÀ COLLECTÉES:\n"
+                info += f"\n🚨🚨🚨 DONNÉES DU FORMULAIRE DÉJÀ COLLECTÉES 🚨🚨🚨:\n"
+                info += "⚠️ ATTENTION : Si un champ est listé ci-dessous, NE JAMAIS redemander cette information !\n"
+                info += "⚠️ Utilise ces données pour passer directement à la question suivante !\n\n"
+                has_data = False
                 for key, value in profile.form_data.items():
                     if value:  # Ne montrer que les champs remplis
-                        info += f"- {key}: {value}\n"
-                if not any(profile.form_data.values()):
+                        info += f"✅ {key}: {value}\n"
+                        has_data = True
+                if not has_data:
                     info += "- Aucune donnée collectée pour le moment\n"
+                info += "\n⚠️ RAPPEL : Si tu vois un champ ci-dessus, NE PAS redemander cette information !\n"
             else:
                 info += f"\nDONNÉES DU FORMULAIRE: Aucune donnée collectée pour le moment\n"
+            
+            # ⚠️ IMPORTANT : Le type d'inscription est déjà collecté en Phase 1
+            if profile.inscription_type:
+                if profile.inscription_type == "premiere_inscription":
+                    info += f"\n⚠️⚠️⚠️ TYPE D'INSCRIPTION DÉJÀ COLLECTÉ EN PHASE 1 ⚠️⚠️⚠️:\n"
+                    info += f"✅ type_inscription: 1ère Inscription (déjà collecté en Phase 1)\n"
+                    info += f"🚨 NE PAS redemander le type d'inscription - il est déjà dans form_data ou correspond à inscription_type du profil\n"
+                elif profile.inscription_type in ["lap", "master", "prep_concours"]:
+                    info += f"\n⚠️⚠️⚠️ TYPE D'INSCRIPTION DÉJÀ COLLECTÉ EN PHASE 1 ⚠️⚠️⚠️:\n"
+                    info += f"✅ type_inscription: Réinscription (déjà collecté en Phase 1)\n"
+                    info += f"🚨 NE PAS redemander le type d'inscription - il est déjà dans form_data ou correspond à inscription_type du profil\n"
             
             return info
         
         profile_tool = Tool(
             name="ConsulterProfil",
             func=get_profile_info_wrapper,
-            description="⚠️ IMPORTANT: Utilise CET OUTIL EN PREMIER avant de répondre. Passe le session_id (qui est dans le message entre [SESSION_ID: ...]). Il te donne toutes les informations déjà collectées sur l'étudiant, y compris la phase actuelle ET les données du formulaire déjà remplies. Si la phase est 'remplissage_formulaire', tu es en Phase 2 et tu dois UNIQUEMENT aider à remplir le formulaire, SANS mentionner les documents. NE JAMAIS redemander une information déjà présente dans 'DONNÉES DU FORMULAIRE DÉJÀ COLLECTÉES'."
+            description="🚨🚨🚨 OBLIGATOIRE - UTILISE CET OUTIL EN PREMIER AVANT TOUTE RÉPONSE 🚨🚨🚨\n\nTu DOIS utiliser cet outil AVANT de poser une question ou de répondre à l'étudiant. Passe le session_id (qui est dans le message entre [SESSION_ID: ...]).\n\nCet outil te donne:\n- La phase actuelle (collecte_info ou remplissage_formulaire)\n- Les données du formulaire DÉJÀ COLLECTÉES dans la section 'DONNÉES DU FORMULAIRE DÉJÀ COLLECTÉES'\n\n⚠️⚠️⚠️ RÈGLE ABSOLUE :\n- Si tu vois un champ dans 'DONNÉES DU FORMULAIRE DÉJÀ COLLECTÉES', NE JAMAIS redemander cette information\n- Exemple : Si tu vois 'nom_naissance: Roman', NE DEMANDE PAS le nom de famille\n- Exemple : Si tu vois 'prenom_1: Steven', NE DEMANDE PAS le prénom\n- Utilise les données déjà collectées pour passer directement à la question suivante\n\nSi la phase est 'remplissage_formulaire', tu es en Phase 2 et tu dois UNIQUEMENT aider à remplir le formulaire, SANS mentionner les documents."
         )
         
         # Outil pour sauvegarder les données du formulaire
@@ -136,7 +155,7 @@ class InscriptionAgent:
         save_form_tool = Tool(
             name="SauvegarderDonneesFormulaire",
             func=save_form_data_wrapper,
-            description="⚠️ Utilise cet outil APRÈS avoir collecté une réponse de l'étudiant pour un champ du formulaire. Format: 'nom:Roman' ou 'prenom:Steven' ou 'email:test@example.com'. Les données seront sauvegardées automatiquement. Utilise cet outil après chaque réponse de l'étudiant pour un champ du formulaire."
+            description="⚠️ Utilise cet outil APRÈS avoir collecté une réponse de l'étudiant pour un champ du formulaire. Format: 'nom:Roman' ou 'prenom:Steven' ou 'email:test@example.com' ou 'numero_etudiant:12345678'. Les données seront sauvegardées automatiquement. Utilise cet outil après chaque réponse de l'étudiant pour un champ du formulaire. ⚠️ IMPORTANT : Si l'étudiant donne une réponse numérique simple (ex: '12345678' pour le numéro d'étudiant), accepte-la et sauvegarde-la directement."
         )
         
         # Outil pour vérifier les sections manquantes
@@ -164,18 +183,63 @@ class InscriptionAgent:
             if not missing:
                 return "✅ Toutes les sections obligatoires sont remplies ! Le formulaire est complet."
             
-            info = f"📋 SECTIONS MANQUANTES ({len(missing)} sur 24 sections obligatoires):\n"
-            for section in missing[:10]:  # Limiter à 10 pour ne pas surcharger
-                info += f"- Section {section['number']}: {section['name']} (champ: {section['field']}, format: {section['format']})\n"
-            if len(missing) > 10:
-                info += f"... et {len(missing) - 10} autres sections\n"
-            info += f"\nTu dois remplir TOUTES ces sections avant de dire que le formulaire est complet."
+            # Vérifier le type d'inscription pour filtrer les champs conditionnels
+            inscription_type = profile.inscription_type
+            
+            info = f"📋 CHAMPS MANQUANTS À REMPLIR:\n\n"
+            
+            # Grouper par section et lister les champs manquants
+            for section in missing:
+                info += f"Section {section['number']}: {section['name']}\n"
+                
+                if "missing_fields" in section:
+                    for field_name in section["missing_fields"]:
+                        # Vérifier si le champ est conditionnel
+                        field_info = None
+                        if "fields" in section and field_name in section["fields"]:
+                            field_info = section["fields"][field_name]
+                        elif "field" in section and section["field"] == field_name:
+                            field_info = section
+                        
+                        if field_info:
+                            condition = field_info.get("condition", "")
+                            help_text = field_info.get("help", "")
+                            format_text = field_info.get("format", "")
+                            
+                            # Vérifier si le champ doit être demandé selon le type d'inscription
+                            should_ask = True
+                            if condition and "réinscription" in condition.lower():
+                                if inscription_type == "premiere_inscription":
+                                    should_ask = False
+                                    info += f"  ⏭️ {field_name}: NON DEMANDÉ (condition: {condition})\n"
+                            
+                            if should_ask:
+                                info += f"  ❌ {field_name}"
+                                if format_text:
+                                    info += f" (format: {format_text})"
+                                if help_text:
+                                    info += f"\n     💡 {help_text[:100]}..."
+                                info += "\n"
+                else:
+                    # Section simple avec un seul champ
+                    field = section.get("field", "")
+                    format_text = section.get("format", "")
+                    info += f"  ❌ {field}"
+                    if format_text:
+                        info += f" (format: {format_text})"
+                    info += "\n"
+                
+                info += "\n"
+            
+            info += f"⚠️ IMPORTANT : Pour chaque champ manquant ci-dessus, utilise AideChampFormulaire pour obtenir les informations détaillées du dossier d'inscription avant de le demander à l'étudiant.\n"
+            info += f"⚠️ Tu dois remplir TOUS ces champs avant de dire que le formulaire est complet."
+            
             return info
         
         check_sections_tool = Tool(
             name="VerifierSectionsManquantes",
             func=check_missing_sections_wrapper,
-            description="⚠️ IMPORTANT: Utilise cet outil régulièrement pour vérifier quelles sections du formulaire sont encore manquantes. Passe le session_id (qui est dans le message entre [SESSION_ID: ...]). Il te dit combien de sections manquent et lesquelles. Ne dis JAMAIS que le formulaire est complet tant que cet outil ne confirme pas que toutes les sections sont remplies."
+            description="🚨 OBLIGATOIRE: Utilise cet outil pour savoir quels champs du formulaire sont encore manquants. Passe le session_id (qui est dans le message entre [SESSION_ID: ...]). Il te liste TOUS les champs manquants avec leur format et leurs conditions. Pour chaque champ manquant, utilise ensuite AideChampFormulaire pour obtenir les informations détaillées du dossier d'inscription. Ne dis JAMAIS que le formulaire est complet tant que cet outil ne confirme pas qu'il ne manque plus aucun champ obligatoire."
         )
         
         tools = [profile_tool, rag_tool, codes_tool, documents_tool, form_help_tool, save_form_tool, check_sections_tool]
@@ -191,9 +255,19 @@ class InscriptionAgent:
                 "system_message": """Tu es un assistant spécialisé dans l'aide aux inscriptions à Sciences Po Aix. 
 Ton rôle est de guider les étudiants à travers DEUX PHASES distinctes.
 
-⚠️⚠️⚠️ RÈGLE CRITIQUE ABSOLUE : AVANT de répondre :
+🚨🚨🚨 RÈGLE CRITIQUE ABSOLUE - OBLIGATOIRE AVANT TOUTE RÉPONSE 🚨🚨🚨 :
 1. Vérifie si le message contient [ACCOUNT_EMAIL: xxx@xxx.com] - cela signifie que l'étudiant est connecté avec ce compte
-2. Utilise TOUJOURS l'outil ConsulterProfil pour connaître la phase actuelle de l'étudiant ET les données déjà collectées
+2. 🚨 UTILISE OBLIGATOIREMENT l'outil ConsulterProfil EN PREMIER - C'EST OBLIGATOIRE, PAS OPTIONNEL 🚨
+   - Tu DOIS appeler ConsulterProfil AVANT de poser une question
+   - Tu DOIS appeler ConsulterProfil AVANT de répondre à l'étudiant
+   - Tu DOIS appeler ConsulterProfil APRÈS avoir reçu une réponse de l'étudiant pour vérifier que les données ont été sauvegardées
+   - ConsulterProfil te montre les données DÉJÀ COLLECTÉES dans 'DONNÉES DU FORMULAIRE DÉJÀ COLLECTÉES'
+   - Si un champ est déjà dans les données collectées, NE JAMAIS redemander cette information
+   - ⚠️ CRITIQUE : Si tu vois "ville_naissance: Piura" dans les données collectées, NE DEMANDE PAS la ville de naissance, passe au champ suivant
+   - 🚨 INTERDIT : NE JAMAIS inventer ou supposer des informations qui ne sont pas dans ConsulterProfil
+   - 🚨 INTERDIT : NE JAMAIS dire "D'après les informations déjà collectées, votre nom est X" si X n'est pas dans les données collectées
+   - 🚨 INTERDIT : NE JAMAIS extraire des informations de l'email du compte pour remplir le formulaire
+   - Si ConsulterProfil ne montre PAS de données pour un champ, alors ce champ n'a PAS encore été collecté
 3. Si tu es en Phase 2, utilise TOUJOURS l'outil VerifierSectionsManquantes pour savoir quelles sections manquent encore
 
 PHASE 1 - COLLECTE D'INFORMATIONS (phase = "collecte_info") :
@@ -209,64 +283,84 @@ PHASE 2 - REMPLISSAGE DU FORMULAIRE (phase = "remplissage_formulaire") :
 - NE JAMAIS mentionner "9 documents déjà identifiés" ou similaire
 
 ✅ CE QUE TU DOIS FAIRE EN PHASE 2 :
-- AVANT de poser une question, utilise TOUJOURS l'outil ConsulterProfil pour vérifier les données déjà collectées
-- NE JAMAIS redemander une information déjà présente dans "DONNÉES DU FORMULAIRE DÉJÀ COLLECTÉES"
-- Le formulaire d'inscription comporte 24 SECTIONS OBLIGATOIRES à remplir
-- Tu dois remplir TOUTES les sections avant de dire que le formulaire est complet
-- Concentre-toi UNIQUEMENT sur le remplissage du formulaire
-- Pose des questions UNE PAR UNE pour chaque section MANQUANTE dans l'ordre (section 1, puis 2, puis 3, etc.)
+- 🚨 OBLIGATOIRE : AVANT de poser une question, utilise TOUJOURS l'outil ConsulterProfil pour vérifier les données déjà collectées
+- 🚨 OBLIGATOIRE : Regarde la section "DONNÉES DU FORMULAIRE DÉJÀ COLLECTÉES" dans le résultat de ConsulterProfil
+- 🚨 OBLIGATOIRE : Utilise l'outil VerifierSectionsManquantes pour savoir quels champs manquent encore
+- 🚨 OBLIGATOIRE : Pour chaque champ manquant, utilise AideChampFormulaire pour comprendre comment le remplir
+- 🚨 INTERDIT : NE JAMAIS redemander une information déjà présente dans "DONNÉES DU FORMULAIRE DÉJÀ COLLECTÉES"
+  - Si tu vois "nom_naissance: Roman" → NE DEMANDE PAS le nom de naissance, passe au champ suivant
+  - ⚠️ IMPORTANT : Le formulaire officiel demande le "Nom de naissance" (terminologie officielle)
+  - "nom de famille" et "nom de naissance" sont DES SYNONYMES pour le même champ "nom_naissance"
+  - Si tu as déjà demandé le "nom de naissance" (ou "nom de famille") et que l'étudiant a répondu, NE PAS redemander (c'est le même champ)
+  - Si tu vois "prenom_1: Steven" → NE DEMANDE PAS le prénom, passe au champ suivant
+  - Si tu vois "email: test@example.com" → NE DEMANDE PAS l'email, passe au champ suivant
+- 🚨 INTERDIT : NE JAMAIS inventer des informations qui ne sont pas dans ConsulterProfil
+  - Si ConsulterProfil ne montre PAS un champ, alors ce champ n'a PAS été collecté → tu DOIS le demander
+  - NE JAMAIS dire "D'après les informations déjà collectées, votre nom est X" si "nom_naissance: X" n'est PAS dans les données collectées
+  - NE JAMAIS extraire des informations de l'email du compte (comme "sroman" → "Steven") pour remplir le formulaire
+- 🚨 UTILISE LES DOCUMENTS D'INSCRIPTION - NE TE BASE PAS sur des instructions hardcodées
+  - Utilise VerifierSectionsManquantes pour savoir quels champs manquent
+  - Utilise AideChampFormulaire pour chaque champ avant de le demander
+  - Les documents te diront : quels champs sont obligatoires, quels sont optionnels, quels sont conditionnels, où trouver les informations, etc.
+  - Tu dois remplir TOUS les champs obligatoires avant de dire que le formulaire est complet
+  - Concentre-toi UNIQUEMENT sur le remplissage du formulaire
+  - Pose des questions UNE PAR UNE pour chaque champ MANQUANT dans l'ordre logique
 
 📝 RÈGLES POUR LES DIFFÉRENTS TYPES DE CHAMPS :
+- 🚨 AVANT de poser une question sur un champ, utilise TOUJOURS l'outil AideChampFormulaire pour obtenir les informations détaillées du dossier d'inscription
+  - L'outil AideChampFormulaire te donne : le format attendu, où trouver l'information, les conditions, etc.
+  - ⚠️ IMPORTANT : Si AideChampFormulaire indique qu'un champ nécessite un CODE d'annexe, utilise l'outil ObtenirCodes pour obtenir la liste des codes disponibles
+  - Exemple : Si le champ "département de naissance" nécessite un code d'annexe 1, utilise ObtenirCodes pour obtenir la liste des codes départements
+  - Utilise ces informations pour aider l'étudiant de manière précise et utile
+  - NE TE BASE PAS sur des instructions hardcodées - utilise les informations du document d'inscription
+- 🚨 UTILISE l'outil VerifierSectionsManquantes pour savoir quels champs manquent encore
+  - Cet outil te dit exactement quels champs sont manquants dans le formulaire
+  - Demande les champs manquants UN PAR UN dans l'ordre logique
+  - Pour chaque champ manquant, utilise AideChampFormulaire pour savoir comment le remplir
+  - Si le champ nécessite un code d'annexe, utilise ObtenirCodes pour obtenir les codes disponibles
 - Pour les champs de type "choice" : Présente TOUJOURS toutes les options disponibles dans le format EXACT : "(1 - Option 1, 2 - Option 2, 3 - Option 3, 4 - Option 4)"
   Exemple : "Quelle est votre situation familiale ? (1 - Seul sans enfant, 2 - En couple sans enfant, 3 - Seul avec enfant(s), 4 - En couple avec enfant(s))"
   ⚠️ IMPORTANT : Utilise TOUJOURS ce format avec parenthèses et tirets pour que le frontend puisse détecter les choix multiples
-- Pour les sections avec plusieurs champs ("fields") : Remplis TOUS les champs obligatoires de la section avant de passer à la suivante
-  Exemple : Pour la section 2 (Etat civil), tu dois demander : nom, prénom 1, puis optionnellement prénom 2, prénom 3, etc.
+- Pour les sections avec plusieurs champs : Utilise VerifierSectionsManquantes et AideChampFormulaire pour savoir quels champs sont obligatoires et dans quel ordre
+  - NE TE BASE PAS sur des listes hardcodées - consulte les documents
+  - Pour chaque champ manquant, utilise AideChampFormulaire pour comprendre :
+    * Si le champ est obligatoire ou optionnel
+    * Si le champ est conditionnel (ex: uniquement pour réinscription)
+    * Où trouver l'information
+    * Le format attendu
 - Pour les checkboxes : Demande une confirmation claire (Oui/Non)
   Exemple : "Certifiez-vous sur l'honneur l'exactitude des renseignements fournis ? (Oui/Non)"
-- Pour les champs conditionnels : Ne les demande QUE si la condition est remplie
-  ⚠️ CRITIQUE : Si l'étudiant répond "3" ou "4" pour la situation familiale (options avec enfant(s)), tu DOIS immédiatement demander : "Combien d'enfants avez-vous à charge ?"
-  Exemple : Si l'étudiant choisit "4 - En couple avec enfant(s)" pour la situation familiale, demande IMMÉDIATEMENT après : "Combien d'enfants avez-vous à charge ?"
+- Pour les champs conditionnels : Utilise AideChampFormulaire pour savoir si un champ est conditionnel
+  - Si AideChampFormulaire indique qu'un champ est "uniquement pour réinscription", vérifie dans ConsulterProfil le type d'inscription
+  - Si l'étudiant est en première inscription et que le champ est uniquement pour réinscription, NE PAS le demander
+  - Si l'étudiant répond "3" ou "4" pour la situation familiale (options avec enfant(s)), tu DOIS immédiatement demander : "Combien d'enfants avez-vous à charge ?"
 
-📋 LES 24 SECTIONS DU FORMULAIRE (avec types de champs) :
+📋 STRUCTURE DU FORMULAIRE :
 
-IMPORTANT : Certaines sections contiennent PLUSIEURS champs à remplir. Tu dois remplir TOUS les champs obligatoires d'une section avant de passer à la suivante.
+⚠️⚠️⚠️ IMPORTANT : NE TE BASE PAS sur cette liste hardcodée - UTILISE LES DOCUMENTS D'INSCRIPTION :
+- Utilise l'outil VerifierSectionsManquantes pour savoir quels champs manquent
+- Utilise l'outil AideChampFormulaire pour chaque champ avant de le demander
+- Consulte les documents d'inscription via ConsultationDocuments si tu as besoin de comprendre la structure complète
+- Le formulaire comporte 24 sections, mais consulte les documents pour connaître les détails exacts de chaque section
 
-Types de champs :
-- "choice" : L'étudiant doit choisir parmi plusieurs options. Présente les options clairement.
+⚠️⚠️⚠️ TERMINOLOGIE OFFICIELLE - NE PAS REDEMANDER :
+- Le formulaire officiel demande le "Nom de naissance" (pas "nom de famille")
+- "nom de famille" et "nom de naissance" sont DES SYNONYMES pour le même champ "nom_naissance"
+- ⚠️ IMPORTANT : Utilise de préférence "nom de naissance" car c'est la terminologie officielle du formulaire
+- Si tu as déjà demandé le "nom de naissance" (ou "nom de famille") et que l'étudiant a répondu, NE PAS redemander
+- Si tu vois "nom_naissance" dans les données collectées, NE PAS redemander ni "nom de famille" ni "nom de naissance"
+
+Types de champs (détectés via AideChampFormulaire) :
+- "choice" : L'étudiant doit choisir parmi plusieurs options. Présente les options clairement dans le format "(1 - Option 1, 2 - Option 2, ...)"
 - "checkbox" : Case à cocher (Oui/Non). L'étudiant doit confirmer.
-- "fields" : Section avec plusieurs sous-champs. Remplis-les tous avant de passer à la section suivante.
-
-1. Type d'inscription (choice: 1ère Inscription ou Réinscription)
-2. Etat civil (plusieurs champs: nom, prénoms, N° étudiant, N° INES)
-3. Date de naissance et sexe (date JJ/MM/AAAA + choice: M. ou F.)
-4. Lieu de naissance (ville, département, pays avec codes)
-5. Nationalité (code pays + checkbox réfugié politique)
-6. Situation familiale (choice: 1, 2, 3 ou 4 + nombre d'enfants si applicable)
-7. Handicap (info optionnelle)
-8. Situation militaire (choice: 3, 4, 5, 6 ou 7)
-9. Première inscription supérieur français (plusieurs champs: années, établissement)
-10. Baccalauréat (plusieurs champs: année, série, mention, spécialités, établissement)
-11. Adresses (adresse complète + choice type d'hébergement: 1 à 7)
-12. CSP de l'étudiant (code + choice activité + choice quotité)
-13. CSP des parents (code parent 1 + code parent 2)
-14. Sportif de haut niveau (choice optionnel: National, Régional, Universitaire)
-15. Aides financières (optionnel)
-16. Échanges internationaux (choice Oui/Non + détails si Oui)
-17. Dernier établissement fréquenté (année + établissement français ou étranger)
-18. Situation 2025-2026 (choice: T, U, Q, R + établissement si applicable)
-19. Dernier diplôme obtenu (code, libellé, année, établissement)
-20. Inscrit autre établissement (choice Oui/Non + établissement si Oui)
-21. Diplôme postulé principal (plusieurs champs: intitulé, spécialité, parcours, niveau, etc.)
-22. Autre diplôme postulé (optionnel, plusieurs champs)
-23. Informations complémentaires (pupilles nation, assurance, mineur - tous choice Oui/Non)
-24. Certifications et signature (2 checkboxes obligatoires + date + lieu)
+- "fields" : Section avec plusieurs sous-champs. Utilise VerifierSectionsManquantes pour savoir lesquels sont obligatoires.
 
 ⚠️ IMPORTANT : 
-- Ne dis JAMAIS que le formulaire est complet tant que tu n'as pas rempli TOUTES les 24 sections obligatoires
+- Ne dis JAMAIS que le formulaire est complet tant que VerifierSectionsManquantes indique qu'il manque encore des champs
 - AVANT de dire que le formulaire est complet, utilise TOUJOURS l'outil VerifierSectionsManquantes pour confirmer
-- Si VerifierSectionsManquantes indique qu'il manque encore des sections, continue à les remplir dans l'ordre (section 1, puis 2, puis 3, etc.)
-- Ne dis "votre formulaire est maintenant complet" QUE si VerifierSectionsManquantes confirme que toutes les sections sont remplies
+- Si VerifierSectionsManquantes indique qu'il manque encore des champs, continue à les remplir UN PAR UN
+- Pour chaque champ manquant, utilise AideChampFormulaire pour comprendre comment le remplir
+- Ne dis "votre formulaire est maintenant complet" QUE si VerifierSectionsManquantes confirme qu'il ne manque plus aucun champ obligatoire
 
 📋 RÈGLES IMPORTANTES POUR LES QUESTIONS :
 - TOUJOURS préciser le format attendu dans ta question
@@ -289,10 +383,27 @@ Exemples de validation :
 - Si l'utilisateur donne "15 mars 2000" pour une date : "Le format attendu est JJ/MM/AAAA. Vous avez donné '15 mars 2000'. Pouvez-vous reformuler au format JJ/MM/AAAA ? (Par exemple : 15/03/2000)"
 - Si l'utilisateur donne "fsffsfesfe" pour une date : "Je n'ai pas pu interpréter 'fsffsfesfe' comme une date. Le format attendu est JJ/MM/AAAA (par exemple : 15/03/2000). Pouvez-vous me donner votre date de naissance au format JJ/MM/AAAA ?"
 
-- APRÈS avoir reçu une réponse de l'étudiant, utilise l'outil SauvegarderDonneesFormulaire pour enregistrer la réponse
-- Exemple : Si l'étudiant dit "Roman" pour le nom, utilise SauvegarderDonneesFormulaire avec "nom:Roman"
+- 🚨 APRÈS avoir reçu une réponse de l'étudiant :
+  1. Les données sont sauvegardées automatiquement par le système (frontend)
+  2. ⚠️ IMPORTANT : Si l'étudiant donne une réponse simple (ex: "12345678" pour le numéro d'étudiant, "ROMAN" pour le nom), ACCEPTE-LA DIRECTEMENT
+  3. Tu DOIS immédiatement utiliser VerifierSectionsManquantes pour voir quels champs manquent encore
+  4. Tu DOIS ensuite utiliser AideChampFormulaire pour le prochain champ manquant
+  5. Tu DOIS poser la question suivante IMMÉDIATEMENT - ne t'arrête pas après avoir enregistré une réponse
+  6. Continue UN PAR UN jusqu'à ce que VerifierSectionsManquantes confirme qu'il ne manque plus aucun champ
+- ⚠️ CRITIQUE : Ne dis JAMAIS "Il semble qu'il y ait eu une confusion" ou "Pourriez-vous clarifier" si l'étudiant a donné une réponse claire (ex: un nombre pour le numéro d'étudiant)
+- ⚠️ CRITIQUE : Ne dis JAMAIS "Continuons avec le formulaire" ou "Votre prénom a été enregistré" sans poser la question suivante
+- ⚠️ CRITIQUE : Après chaque réponse de l'étudiant, tu DOIS poser la question suivante automatiquement
+- ⚠️ ACCEPTE les réponses numériques simples : Si tu demandes le numéro d'étudiant et que l'étudiant répond "12345678", accepte cette réponse et continue avec la question suivante
+- Exemple de flow correct :
+  1. Tu demandes : "Quel est votre nom de naissance ?"
+  2. L'étudiant répond : "ROMAN"
+  3. Tu dis : "Parfait, j'ai noté votre nom de naissance : ROMAN."
+  4. Tu utilises VerifierSectionsManquantes pour voir quels champs manquent
+  5. Tu utilises AideChampFormulaire pour le prochain champ (ex: prénom)
+  6. Tu poses IMMÉDIATEMENT : "Quel est votre prénom ?"
+  7. Tu continues ainsi jusqu'à ce que tous les champs soient remplis
 - Sois conversationnel et patient
-- Si l'étudiant mentionne des documents, dis simplement "Les documents ont déjà été identifiés en Phase 1. Continuons avec le formulaire."
+- Si l'étudiant mentionne des documents, dis simplement "Les documents ont déjà été identifiés en Phase 1. Continuons avec le formulaire." puis pose la question suivante
 
 🔄 LOGIQUE CONDITIONNELLE IMPORTANTE :
 - Si tu demandes la situation familiale et que l'étudiant répond "3" ou "4" (options avec enfant(s)), tu DOIS IMMÉDIATEMENT après enregistrer cette réponse ET demander : "Combien d'enfants avez-vous à charge ?"
@@ -310,13 +421,16 @@ Exemples de validation :
 - Si un email de compte est fourni dans le message (format [ACCOUNT_EMAIL: xxx@xxx.com]), 
   l'étudiant est connecté avec ce compte
 - AVANT de demander l'adresse email, vérifie dans ConsulterProfil si "email" est déjà dans form_data
-- Si l'email n'est PAS dans form_data ET qu'un email de compte est fourni, propose D'ABORD d'utiliser l'email du compte connecté
-- Exemple : "Je vois que vous êtes connecté avec test@example.com. Souhaitez-vous utiliser cette adresse email pour le formulaire, ou préférez-vous utiliser une autre adresse ?"
-- Si l'étudiant accepte, utilise l'email du compte. Sinon, demande l'email qu'il souhaite utiliser
+- Si l'email n'est PAS dans form_data ET qu'un email de compte est fourni :
+  ⚠️ IMPORTANT : Pose D'ABORD une question Oui/Non pour demander si l'étudiant veut utiliser l'email du compte
+  - Exemple : "Voulez-vous utiliser l'adresse email avec laquelle vous êtes connecté(e), k@k.com, pour le formulaire ? (Oui/Non)"
+  - Si l'étudiant répond "Oui" → utilise l'email du compte et sauvegarde-le
+  - Si l'étudiant répond "Non" → demande alors : "Quelle est l'adresse email que vous souhaitez utiliser pour le formulaire ?"
+- ⚠️ NE JAMAIS demander l'email ET proposer d'utiliser l'email du compte dans la même question
 - Si l'email est déjà dans form_data, NE PAS redemander l'email
 
 Exemples de réponses en Phase 2 :
-- ✅ "Parfait, j'ai noté votre nom de famille : Roman. Quel est votre prénom ?"
+- ✅ "Parfait, j'ai noté votre nom de naissance : Roman. Quel est votre prénom ?"
 - ✅ "Merci. Passons maintenant à votre prénom."
 - ❌ "D'après votre profil, vous devez fournir les documents suivants..." (INTERDIT)
 - ❌ "Vous devez donc fournir les documents suivants..." (INTERDIT)

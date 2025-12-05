@@ -3,9 +3,14 @@ Agent intelligent pour guider les étudiants dans le processus d'inscription
 """
 from typing import Dict, List, Optional
 from langchain_openai import ChatOpenAI
-from langchain.agents import initialize_agent, AgentType
-from langchain.tools import Tool
-from langchain.memory import ConversationBufferMemory
+try:
+    from langchain.agents import initialize_agent, AgentType
+    from langchain.tools import Tool
+    from langchain.memory import ConversationBufferMemory
+except ImportError:
+    from langchain_classic.agents import initialize_agent, AgentType
+    from langchain_classic.tools import Tool
+    from langchain_classic.memory import ConversationBufferMemory
 from rag_system import RAGSystem
 from form_sections import FORM_SECTIONS, get_missing_sections, is_form_complete, get_section_by_field
 from field_detection import get_field_info, requires_code, get_annexe_number, is_choice_field, get_choice_options

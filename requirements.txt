@@ -6,7 +6,7 @@ pdfplumber==0.10.3
 langchain>=0.1.0
 langchain-openai>=0.0.5
 langchain-community>=0.0.20
-chromadb>=0.4.18
+chromadb==0.4.22
 openai>=1.6.1
 python-multipart==0.0.6
 jinja2==3.1.2
